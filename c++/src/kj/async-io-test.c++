@@ -3595,7 +3595,7 @@ KJ_TEST("accept() with aborted connection - IPv4") {
   uint16_t port = listener->getPort();
 
   // Create a connection that will be aborted (sends RST packet)
-  kj::Thread abortThread([&] {
+  {
     int s = ::socket(AF_INET, SOCK_STREAM, 0);
     KJ_ASSERT(s >= 0);
 
@@ -3611,11 +3611,12 @@ KJ_TEST("accept() with aborted connection - IPv4") {
 
     // Close immediately to send RST packet
     KJ_SYSCALL(::close(s));
-  });
+  };
 
   // Allow aborted connection to reach accept queue first
-  io.provider->getTimer().afterDelay(2 * kj::MILLISECONDS)
-                        .wait(io.waitScope);
+  usleep(100);
+  // io.provider->getTimer().afterDelay(0 * kj::MILLISECONDS)
+  //                       .wait(io.waitScope);
 
   // Create a valid connection that should work
   auto clientP = net.parseAddress("127.0.0.1", port)
@@ -3660,8 +3661,6 @@ KJ_TEST("accept() with aborted connection - IPv4") {
   auto amount = readPromise2.wait(io.waitScope);
   KJ_ASSERT(amount == 5);
   KJ_ASSERT(memcmp(buffer, "hello", 5) == 0);
-
-  abortThread.detach();
 }
 #endif  // !_WIN32
 
@@ -3697,7 +3696,7 @@ KJ_TEST("accept() with aborted connection - dual-stack IPv4/IPv6") {
   uint16_t port = listener->getPort();
 
   // Create IPv4 connection that will be aborted (sends RST packet)
-  kj::Thread abortThread([&] {
+  {
     int s = ::socket(AF_INET, SOCK_STREAM, 0);
     KJ_ASSERT(s >= 0);
 
@@ -3713,11 +3712,12 @@ KJ_TEST("accept() with aborted connection - dual-stack IPv4/IPv6") {
 
     // Close immediately to send RST packet
     KJ_SYSCALL(::close(s));
-  });
+  };
 
   // Allow aborted connection to reach accept queue first
-  io.provider->getTimer().afterDelay(2 * kj::MILLISECONDS)
-                         .wait(io.waitScope);
+  usleep(100);
+  // io.provider->getTimer().afterDelay(0 * kj::MILLISECONDS)
+  //                        .wait(io.waitScope);
 
   // Create valid IPv6 connection
   auto clientP = net.parseAddress("::1", port)
@@ -3767,8 +3767,6 @@ KJ_TEST("accept() with aborted connection - dual-stack IPv4/IPv6") {
   auto amount = readPromise.wait(io.waitScope);
   KJ_ASSERT(amount == 5);
   KJ_ASSERT(memcmp(buffer, "hello", 5) == 0);
-
-  abortThread.detach();
 }
 #endif  // !_WIN32
 
